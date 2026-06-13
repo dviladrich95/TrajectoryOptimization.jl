@@ -141,6 +141,10 @@ end
         @test quadcost.R == R
         @test quadcost.r == zeros(m)
         @test quadcost.c ≈ 0.5 * xf'Q * xf
+        @test quadcost isa DiagonalCost
+        @test TO.is_blockdiag(quadcost)
+        @test TO.is_diag(quadcost)
+
         # Test keyword reference tracking constructors
         uf = @SVector rand(m)
         
