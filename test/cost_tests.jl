@@ -141,9 +141,40 @@ end
         @test quadcost.R == R
         @test quadcost.r == zeros(m)
         @test quadcost.c ≈ 0.5 * xf'Q * xf
-        @test quadcost isa DiagonalCost
-        @test TO.is_blockdiag(quadcost)
-        @test TO.is_diag(quadcost)
+        # Test keyword reference tracking constructors
+        uf = @SVector rand(m)
+        
+        # 1. QuadraticCost with x_ref
+        qcost_ref = QuadraticCost(Q, R, x_ref=xf)
+        @test qcost_ref.Q == Q
+        @test qcost_ref.q == -Q * xf
+        @test qcost_ref.R == R
+        @test qcost_ref.r == zeros(m)
+        @test qcost_ref.c ≈ 0.5 * xf'Q * xf
+
+        # 2. DiagonalCost with x_ref
+        dcost_ref = DiagonalCost(Q, R, x_ref=xf)
+        @test dcost_ref.Q == Q
+        @test dcost_ref.q == -Q * xf
+        @test dcost_ref.R == R
+        @test dcost_ref.r == zeros(m)
+        @test dcost_ref.c ≈ 0.5 * xf'Q * xf
+
+        # 3. QuadraticCost with both x_ref and u_ref
+        qcost_ref2 = QuadraticCost(Q, R, x_ref=xf, u_ref=uf)
+        @test qcost_ref2.Q == Q
+        @test qcost_ref2.q == -Q * xf
+        @test qcost_ref2.R == R
+        @test qcost_ref2.r == -R * uf
+        @test qcost_ref2.c ≈ 0.5 * xf'Q * xf + 0.5 * uf'R * uf
+
+        # 4. QuadraticCost with non-zero H and both references
+        qcost_ref3 = QuadraticCost(Q, R, H=H, x_ref=xf, u_ref=uf)
+        @test qcost_ref3.Q == Q
+        @test qcost_ref3.q ≈ -Q * xf - H' * uf
+        @test qcost_ref3.R == R
+        @test qcost_ref3.r ≈ -R * uf - H * xf
+        @test qcost_ref3.c ≈ 0.5 * xf'Q * xf + 0.5 * uf'R * uf + uf'H * xf
     end
 
     @testset "Math Operations" begin

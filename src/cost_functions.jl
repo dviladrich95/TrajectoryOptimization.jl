@@ -53,7 +53,28 @@ function (::Type{QC})(Q::AbstractArray, R::AbstractArray;
         H::AbstractArray=SizedMatrix{size(R,1),size(Q,1)}(zeros(eltype(Q), size(R,1), size(Q,1))),
         q::AbstractVector=(@SVector zeros(eltype(Q), size(Q,1))),
         r::AbstractVector=(@SVector zeros(eltype(R), size(R,1))),
-        c::Real=zero(eltype(Q)), kwargs...) where QC <: QuadraticCostFunction
+        c::Real=zero(eltype(Q)),
+        x_ref::Union{Nothing,AbstractVector}=nothing,
+        u_ref::Union{Nothing,AbstractVector}=nothing,
+        kwargs...) where QC <: QuadraticCostFunction
+    if !isnothing(x_ref) || !isnothing(u_ref)
+        n, m = size(Q, 1), size(R, 1)
+        T = promote_type(eltype(Q), eltype(R), eltype(H))
+        xr = isnothing(x_ref) ? (@SVector zeros(T, n)) : x_ref
+        ur = isnothing(u_ref) ? (@SVector zeros(T, m)) : u_ref
+        q = -Q * xr
+        if norm(H, Inf) > 0
+            q -= H' * ur
+        end
+        r = -R * ur
+        if norm(H, Inf) > 0
+            r -= H * xr
+        end
+        c = 0.5 * xr' * Q * xr + 0.5 * ur' * R * ur
+        if norm(H, Inf) > 0
+            c += ur' * H * xr
+        end
+    end
     QC(Q, R, H, q, r, c; kwargs...)
 end
 
